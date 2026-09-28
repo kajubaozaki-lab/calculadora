@@ -3,91 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Salário - 4x2 Japão</title>
+  <title>Calculadora & Calendário 4x2 Japão</title>
   <style>
+    :root {
+      --primary: #0284c7;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --day-shift: #e0f2fe;
+      --day-text: #0369a1;
+      --night-shift: #f3e8ff;
+      --night-text: #6b21a8;
+      --off-shift: #f1f5f9;
+      --off-text: #94a3b8;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f1f5f9;
+      background-color: var(--bg);
       margin: 0;
-      padding: 20px;
-      color: #0f172a;
+      padding: 16px;
+      color: var(--text);
     }
-    .card {
-      max-width: 450px;
+
+    .container {
+      max-width: 500px;
       margin: 0 auto;
-      background: #ffffff;
+    }
+
+    .card {
+      background: var(--card-bg);
       border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    }
-    h2 {
-      margin-top: 0;
-      font-size: 22px;
-      text-align: center;
-      color: #0284c7;
-    }
-    p.subtitle {
-      text-align: center;
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 20px;
-    }
-    .form-group {
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       margin-bottom: 16px;
     }
+
+    h2, h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
     label {
       display: block;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 6px;
-      color: #334155;
+      margin-bottom: 5px;
+      color: #475569;
     }
-    input[type="number"], select {
+
+    input, select {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 15px;
       box-sizing: border-box;
     }
-    .shift-toggle {
+
+    .calendar-header {
       display: flex;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
     }
-    .shift-toggle button {
-      flex: 1;
-      padding: 12px;
-      border: 2px solid #cbd5e1;
-      background: #f8fafc;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    .shift-toggle button.active {
-      border-color: #0284c7;
-      background-color: #e0f2fe;
-      color: #0369a1;
-    }
-    button.btn-calc {
-      width: 100%;
-      background-color: #0284c7;
+
+    .btn-nav {
+      background: var(--primary);
       color: white;
       border: none;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 16px;
+      padding: 6px 12px;
+      border-radius: 6px;
       font-weight: bold;
-      margin-top: 10px;
       cursor: pointer;
     }
-    .result-box {
-      margin-top: 20px;
-      background-color: #f8fafc;
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid #e2e8f0;
+
+    .grid-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
     }
+
+    .grid-calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      position: relative;
+    }
+
+    .day-cell.empty {
+      border: none;
+      background: transparent;
+    }
+
+    .day-cell.shift-dia {
+      background-color: var(--day-shift);
+      color: var(--day-text);
+      border-color: #bae6fd;
+    }
+
+    .day-cell.shift-noite {
+      background-color: var(--night-shift);
+      color: var(--night-text);
+      border-color: #e9d5ff;
+    }
+
+    .day-cell.shift-folga {
+      background-color: var(--off-shift);
+      color: var(--off-text);
+    }
+
+    .day-cell.is-sunday-worked {
+      border: 2px solid #f59e0b;
+      box-shadow: inset 0 0 0 1px #f59e0b;
+    }
+
+    .shift-tag {
+      font-size: 8px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 11px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
     .total-price {
       font-size: 24px;
       font-weight: bold;
@@ -95,107 +179,180 @@
       text-align: center;
       margin-bottom: 12px;
     }
+
     .detail-item {
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
-      padding: 6px 0;
+      font-size: 13px;
+      padding: 5px 0;
       border-bottom: 1px dashed #e2e8f0;
     }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>Calculadora de Salário</h2>
-  <p class="subtitle">Fechamento do dia 21 ao dia 20 (Turno 4x2 - 11h/dia)</p>
+<div class="container">
+  <div class="card">
+    <h2>📅 Escala 4x2 & Salário</h2>
+    <p style="font-size: 12px; color: #64748b; margin-top: -10px;">Fechamento automático do dia 21 ao dia 20</p>
 
-  <div class="form-group">
-    <label>Valor por Hora (¥):</label>
-    <input type="number" id="valorHora" value="1550">
-  </div>
+    <div class="form-group">
+      <label>Data de Início do 1º Turno DIA (Ex: 21/05):</label>
+      <input type="date" id="startDate" value="2026-05-21" onchange="updateAll()">
+    </div>
 
-  <div class="form-group">
-    <label>Dias Totais Trabalhados no Mês (21 a 20):</label>
-    <input type="number" id="diasTotais" placeholder="Ex: 20">
-  </div>
-
-  <div class="form-group">
-    <label>Quantos DOMINGOS você trabalhou no mês?</label>
-    <input type="number" id="diasDomingo" value="0" placeholder="Ex: 0, 1, 2, 3 ou 4">
-  </div>
-
-  <div class="form-group">
-    <label>Qual foi o seu Turno?</label>
-    <div class="shift-toggle">
-      <button type="button" id="btnDia" class="active" onclick="setShift('dia')">☀️ DIA</button>
-      <button type="button" id="btnNoite" onclick="setShift('noite')">🌙 NOITE</button>
+    <div class="form-group">
+      <label>Valor por Hora (¥):</label>
+      <input type="number" id="valorHora" value="1550" onchange="updateAll()">
     </div>
   </div>
 
-  <button class="btn-calc" onclick="calcular()">Calcular Salário Bruto</button>
+  <div class="card">
+    <div class="calendar-header">
+      <button class="btn-nav" onclick="changePeriod(-1)">◄ Anterior</button>
+      <h3 id="periodTitle" style="margin:0; font-size: 15px;">Período</h3>
+      <button class="btn-nav" onclick="changePeriod(1)">Próximo ►</button>
+    </div>
 
-  <div class="result-box" id="resultado" style="display:none;">
-    <div class="total-price" id="totalBruto">¥0</div>
-    <div class="detail-item"><span>Dias Úteis (Seg-Sáb):</span> <strong id="detUteis">0 dias</strong></div>
-    <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="detDomingos">0 dias</strong></div>
-    <div class="detail-item"><span>Valor por Domingos (+35%):</span> <strong id="detValDomingos">¥0</strong></div>
-    <div class="detail-item"><span>Horas Extras em Dias Úteis (+25%):</span> <strong id="detExtras">¥0</strong></div>
-    <div class="detail-item" id="rowNoturno" style="display:none;"><span>Adicional Noturno Automático (+25%):</span> <strong id="detNoturno">¥0</strong></div>
+    <div class="grid-weekdays">
+      <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+    </div>
+
+    <div class="grid-calendar" id="calendarGrid"></div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-box" style="background: var(--day-shift)"></div> DIA</div>
+      <div class="legend-item"><div class="legend-box" style="background: var(--night-shift)"></div> NOITE</div>
+      <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA</div>
+      <div class="legend-item"><div class="legend-box" style="border: 2px solid #f59e0b; background:#fef3c7;"></div> DOMINGO (+35%)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💰 Resumo Calculado Automático</h3>
+    <div class="summary-card">
+      <div class="total-price" id="totalBruto">¥0</div>
+      <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
+      <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
+      <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
+      <div class="detail-item"><span>Total de Dias Trabalhados:</span> <strong id="cntTotal">0 dias</strong></div>
+      <div class="detail-item"><span>Horas Extras em Dias Úteis (+25%):</span> <strong id="valExtras">¥0</strong></div>
+      <div class="detail-item"><span>Adicional Noturno (+25%):</span> <strong id="valNoturno">¥0</strong></div>
+      <div class="detail-item"><span>Adicional de Domingos (+35%):</span> <strong id="valDomingos">¥0</strong></div>
+    </div>
   </div>
 </div>
 
 <script>
-  let turnoAtual = 'dia';
+  let currentPeriodOffset = 0;
+  const baseYear = 2026;
+  const baseMonth = 4; // Maio
 
-  function setShift(turno) {
-    turnoAtual = turno;
-    document.getElementById('btnDia').classList.toggle('active', turno === 'dia');
-    document.getElementById('btnNoite').classList.toggle('active', turno === 'noite');
+  function getPeriodDates(offset) {
+    const start = new Date(baseYear, baseMonth + offset, 21);
+    const end = new Date(baseYear, baseMonth + offset + 1, 20);
+    return { start, end };
   }
 
-  function calcular() {
-    const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
-    const diasTotais = parseInt(document.getElementById('diasTotais').value) || 0;
-    const diasDomingo = parseInt(document.getElementById('diasDomingo').value) || 0;
+  // Rotação 12 dias: 4 DIA (0..3), 2 FOLGA (4..5), 4 NOITE (6..9), 2 FOLGA (10..11)
+  function getShiftForDate(dateObj, refStartDate) {
+    const diffTime = dateObj.getTime() - refStartDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    let cyclePos = diffDays % 12;
+    if (cyclePos < 0) cyclePos += 12;
 
-    // Dias de semana/sábado
-    const diasUteis = Math.max(0, diasTotais - diasDomingo);
+    if (cyclePos >= 0 && cyclePos <= 3) return 'DIA';
+    if (cyclePos >= 4 && cyclePos <= 5) return 'FOLGA';
+    if (cyclePos >= 6 && cyclePos <= 9) return 'NOITE';
+    return 'FOLGA';
+  }
 
-    // Valores por Hora
-    const valorHoraNormal = valorHora;
-    const valorHoraExtra = valorHora * 1.25;
-    const valorHoraDomingo = valorHora * 1.35;
-    const valorAdicionalNoturno = valorHora * 0.25;
+  function changePeriod(delta) {
+    currentPeriodOffset += delta;
+    updateAll();
+  }
 
-    // 1. Dias Úteis (9h normais + 2h extras)
-    const totalNormais = diasUteis * 9 * valorHoraNormal;
-    const totalExtras = diasUteis * 2 * valorHoraExtra;
+  function updateAll() {
+    const startInput = document.getElementById('startDate').value;
+    if (!startInput) return;
+    const refStartDate = new Date(startInput + 'T00:00:00');
 
-    // 2. Domingos Trabalhados (11h com +35%)
-    const totalDomingos = diasDomingo * 11 * valorHoraDomingo;
+    const { start: periodStart, end: periodEnd } = getPeriodDates(currentPeriodOffset);
 
-    // 3. Turno Noturno Automático (5h noturnas por dia trabalhado)
-    let totalNoturno = 0;
-    if (turnoAtual === 'noite') {
-      const horasNoturnasPorDia = 5;
-      totalNoturno = diasTotais * horasNoturnasPorDia * valorAdicionalNoturno;
-      document.getElementById('rowNoturno').style.display = 'flex';
-      document.getElementById('detNoturno').innerText = '¥' + Math.round(totalNoturno).toLocaleString('ja-JP');
-    } else {
-      document.getElementById('rowNoturno').style.display = 'none';
+    const formatD = (d) => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+    document.getElementById('periodTitle').innerText = `${formatD(periodStart)} ～ ${formatD(periodEnd)}`;
+
+    const calendarGrid = document.getElementById('calendarGrid');
+    calendarGrid.innerHTML = '';
+
+    const startDayOfWeek = periodStart.getDay();
+    for (let i = 0; i < startDayOfWeek; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'day-cell empty';
+      calendarGrid.appendChild(emptyCell);
     }
+
+    let countDia = 0;
+    let countNoite = 0;
+    let countDomingoTrabalhado = 0;
+
+    let curr = new Date(periodStart);
+    while (curr <= periodEnd) {
+      const shift = getShiftForDate(curr, refStartDate);
+      const isSunday = (curr.getDay() === 0);
+      const isWorked = (shift === 'DIA' || shift === 'NOITE');
+
+      if (shift === 'DIA') countDia++;
+      if (shift === 'NOITE') countNoite++;
+      if (isSunday && isWorked) countDomingoTrabalhado++;
+
+      const cell = document.createElement('div');
+      let shiftClass = 'shift-folga';
+      let labelText = 'OFF';
+
+      if (shift === 'DIA') {
+        shiftClass = 'shift-dia';
+        labelText = 'DIA';
+      } else if (shift === 'NOITE') {
+        shiftClass = 'shift-noite';
+        labelText = 'NOITE';
+      }
+
+      cell.className = `day-cell ${shiftClass}`;
+      if (isSunday && isWorked) {
+        cell.classList.add('is-sunday-worked');
+      }
+
+      cell.innerHTML = `<div>${curr.getDate()}</div><div class="shift-tag">${labelText}</div>`;
+      calendarGrid.appendChild(cell);
+
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
+    const totalDiasTrabalhados = countDia + countNoite;
+    const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
+
+    const totalNormais = diasUteisTrabalhados * 9 * valorHora;
+    const totalExtras = diasUteisTrabalhados * 2 * (valorHora * 1.25);
+    const totalDomingos = countDomingoTrabalhado * 11 * (valorHora * 1.35);
+    const totalNoturno = countNoite * 5 * (valorHora * 0.25);
 
     const totalBruto = totalNormais + totalExtras + totalDomingos + totalNoturno;
 
-    document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
-    document.getElementById('detUteis').innerText = diasUteis + ' dias';
-    document.getElementById('detDomingos').innerText = diasDomingo + ' dias';
-    document.getElementById('detValDomingos').innerText = '¥' + Math.round(totalDomingos).toLocaleString('ja-JP');
-    document.getElementById('detExtras').innerText = '¥' + Math.round(totalExtras).toLocaleString('ja-JP');
+    document.getElementById('cntDia').innerText = countDia + ' dias';
+    document.getElementById('cntNoite').innerText = countNoite + ' dias';
+    document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
+    document.getElementById('cntTotal').innerText = totalDiasTrabalhados + ' dias';
 
-    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('valExtras').innerText = '¥' + Math.round(totalExtras).toLocaleString('ja-JP');
+    document.getElementById('valNoturno').innerText = '¥' + Math.round(totalNoturno).toLocaleString('ja-JP');
+    document.getElementById('valDomingos').innerText = '¥' + Math.round(totalDomingos).toLocaleString('ja-JP');
+    document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
   }
+
+  updateAll();
 </script>
 
 </body>
