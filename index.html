@@ -272,18 +272,16 @@
     <h3>💰 Resumo Calculado Automático</h3>
     <div class="summary-card">
       <div class="total-price" id="totalBruto">¥0</div>
-      <div class="detail-item"><span>Horas Normais (9h/dia):</span> <strong id="cntHorasNormais">0 hrs</strong></div>
-      <div class="detail-item"><span>Horas Extras (2h/dia):</span> <strong id="cntHorasExtras">0 hrs</strong></div>
-      <div class="detail-item"><span>Adicional Noturno (5.1h/noite):</span> <strong id="cntHorasNoturnas">0 hrs</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
+      <div class="detail-item"><span>Total de Dias Trabalhados:</span> <strong id="cntTotalTrabalhado">0 dias</strong></div>
       <div class="detail-item"><span>Folgas Forçadas:</span> <strong id="cntForced" style="color:#dc2626;">0 dias</strong></div>
-      <div class="detail-item"><span>Domingos Trabalhados:</span> <strong id="cntDom">0 dias</strong></div>
+      <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
       <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 8px 0;">
-      <div class="detail-item"><span>Salário Base (所定内):</span> <strong id="valBase">¥0</strong></div>
-      <div class="detail-item"><span>Horas Extras - 残業 (+25%):</span> <strong id="valExtras">¥0</strong></div>
+      <div class="detail-item"><span>Salário Base (9h/dia):</span> <strong id="valBase">¥0</strong></div>
+      <div class="detail-item"><span>Horas Extras - 残業 (2h/dia +25%):</span> <strong id="valExtras">¥0</strong></div>
       <div class="detail-item"><span>Adicional Noturno - 深夜 (+25%):</span> <strong id="valNoturno">¥0</strong></div>
-      <div class="detail-item"><span>Horas de Domingo - 休日 (+35%):</span> <strong id="valDomingos">¥0</strong></div>
+      <div class="detail-item"><span>Adicional de Domingo - 休日 (+35%):</span> <strong id="valDomingos">¥0</strong></div>
     </div>
   </div>
 </div>
@@ -292,9 +290,8 @@
   let currentPeriodOffset = 0;
   const forcedOffDays = new Set();
 
-  // Mês base fixo de referência (Julho/Agosto 2026)
   const BASE_YEAR = 2026;
-  const BASE_MONTH = 6; // Julho (0-indexed)
+  const BASE_MONTH = 6; // Julho
 
   function getPeriodDates(offset) {
     const start = new Date(BASE_YEAR, BASE_MONTH + offset, 21);
@@ -303,7 +300,6 @@
   }
 
   function getShiftForDate(dateObj, startCyclePos) {
-    // Referência fixa do dia 21 do período inicial
     const base21 = new Date(BASE_YEAR, BASE_MONTH, 21);
     const d1 = Date.UTC(base21.getFullYear(), base21.getMonth(), base21.getDate());
     const d2 = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
@@ -408,36 +404,34 @@
 
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
 
-    // Ajuste exato das horas de acordo com o meishou da fábrica
+    // LÓGICA DE CÁLCULO CORRIGIDA:
+    // Todos os 18 dias geram 9h normais e 2h extras (1.25)
     const totalDiasTrabalhados = countDia + countNoite;
-    const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
-
-    const horasNormais = diasUteisTrabalhados * 9;
-    const horasExtras = diasUteisTrabalhados * 2;
-    const horasNoturnas = Math.round(countNoite * 5.105 * 100) / 100; // Média exata de adicionais noturnos
-    const horasDomingo = countDomingoTrabalhado * 11;
+    
+    const horasNormais = totalDiasTrabalhados * 9;
+    const horasExtras = totalDiasTrabalhados * 2;
+    const horasNoturnas = countNoite * 5.1; // 5.1h por noite
+    const horasDomingo = countDomingoTrabalhado * 11; // 11h por domingo
 
     // Valores Financeiros
     const valBase = horasNormais * valorHora;
     const valExtras = horasExtras * (valorHora * 1.25);
     const valNoturno = horasNoturnas * (valorHora * 0.25);
-    const valDomingos = horasDomingo * (valorHora * 1.35);
+    const valDomingos = horasDomingo * (valorHora * 0.35); // Bônus de 35% do domingo
 
     const totalBruto = valBase + valExtras + valNoturno + valDomingos;
 
-    // Atualização da Tela
-    document.getElementById('cntHorasNormais').innerText = horasNormais + ' hrs';
-    document.getElementById('cntHorasExtras').innerText = horasExtras + ' hrs';
-    document.getElementById('cntHorasNoturnas').innerText = horasNoturnas + ' hrs';
+    // Exibição na Tela
     document.getElementById('cntDia').innerText = countDia + ' dias';
     document.getElementById('cntNoite').innerText = countNoite + ' dias';
+    document.getElementById('cntTotalTrabalhado').innerText = totalDiasTrabalhados + ' dias';
     document.getElementById('cntForced').innerText = countForced + ' dias';
     document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
 
-    document.getElementById('valBase').innerText = '¥' + Math.round(valBase).toLocaleString('ja-JP');
-    document.getElementById('valExtras').innerText = '¥' + Math.round(valExtras).toLocaleString('ja-JP');
-    document.getElementById('valNoturno').innerText = '¥' + Math.round(valNoturno).toLocaleString('ja-JP');
-    document.getElementById('valDomingos').innerText = '¥' + Math.round(valDomingos).toLocaleString('ja-JP');
+    document.getElementById('valBase').innerText = '¥' + Math.round(valBase).toLocaleString('ja-JP') + ` (${horasNormais}h)`;
+    document.getElementById('valExtras').innerText = '¥' + Math.round(valExtras).toLocaleString('ja-JP') + ` (${horasExtras}h)`;
+    document.getElementById('valNoturno').innerText = '¥' + Math.round(valNoturno).toLocaleString('ja-JP') + ` (${horasNoturnas.toFixed(1)}h)`;
+    document.getElementById('valDomingos').innerText = '¥' + Math.round(valDomingos).toLocaleString('ja-JP') + ` (${horasDomingo}h)`;
     document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
   }
 
