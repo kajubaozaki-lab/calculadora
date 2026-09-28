@@ -3,160 +3,195 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Salário - Turno Fixo (Murata / Fuji)</title>
+  <title>Calculadora de Salário - 4x2 Japão</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #333941;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f1f5f9;
       margin: 0;
       padding: 20px;
+      color: #0f172a;
     }
-    .container {
+    .card {
       max-width: 450px;
       margin: 0 auto;
       background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
     h2 {
+      margin-top: 0;
+      font-size: 22px;
       text-align: center;
-      color: #1b365d;
+      color: #0284c7;
+    }
+    p.subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
       margin-bottom: 20px;
     }
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 16px;
     }
     label {
       display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
     }
-    input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    button {
+    input[type="number"], select {
       width: 100%;
       padding: 12px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 18px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .shift-toggle {
+      display: flex;
+      gap: 10px;
+    }
+    .shift-toggle button {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 15px;
+    }
+    .shift-toggle button.active {
+      border-color: #0284c7;
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+    button.btn-calc {
+      width: 100%;
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
       margin-top: 10px;
+      cursor: pointer;
     }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .resultado {
+    .result-box {
       margin-top: 20px;
-      padding: 15px;
-      background-color: #e9ecef;
-      border-radius: 8px;
+      background-color: #f8fafc;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
     }
-    .resultado h3 {
-      margin: 0 0 10px 0;
-      color: #28a745;
+    .total-price {
+      font-size: 24px;
+      font-weight: bold;
+      color: #16a34a;
       text-align: center;
+      margin-bottom: 12px;
     }
-    .item-resumo {
+    .detail-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
       font-size: 14px;
+      padding: 6px 0;
+      border-bottom: 1px dashed #e2e8f0;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Calculadora de Salário<br><small style="font-size: 14px; font-weight: normal;">Turno Fixo Diurno (4x2)</small></h2>
+<div class="card">
+  <h2>Calculadora de Salário</h2>
+  <p class="subtitle">Fechamento do dia 21 ao dia 20 (Turno 4x2 - 11h/dia)</p>
 
   <div class="form-group">
-    <label for="jikyuu">Valor por Hora (¥):</label>
-    <input type="number" id="jikyuu" value="1400">
+    <label>Valor por Hora (¥):</label>
+    <input type="number" id="valorHora" value="1550">
   </div>
 
   <div class="form-group">
-    <label for="diasTrabalhados">Dias Trabalhados no Mês:</label>
-    <input type="number" id="diasTrabalhados" value="20">
+    <label>Dias Totais Trabalhados no Período:</label>
+    <input type="number" id="diasTotais" placeholder="Ex: 18">
   </div>
 
   <div class="form-group">
-    <label for="horasNormais">Horas Normais por Dia:</label>
-    <input type="number" id="horasNormais" value="9">
+    <label>Desses dias, quantos foram DOMINGOS?</label>
+    <input type="number" id="diasDomingo" value="0" placeholder="Ex: 1">
   </div>
 
   <div class="form-group">
-    <label for="horasExtras">Horas Extras por Dia (+25%):</label>
-    <input type="number" id="horasExtras" value="2">
-  </div>
-
-  <div class="form-group">
-    <label for="horasDomingo">Total de Horas em Domingo (+35%):</label>
-    <input type="number" id="horasDomingo" value="0" placeholder="Ex: 11 se trabalhou no domingo">
-  </div>
-
-  <button onclick="calcular()">Calcular Salário Bruto</button>
-
-  <div class="resultado" id="painelResultado" style="display:none;">
-    <h3 id="totalBruto">Total: ¥0</h3>
-    <hr>
-    <div class="item-resumo">
-      <span>Horas Normais:</span>
-      <strong id="resNormais">¥0</strong>
+    <label>Qual foi seu Turno?</label>
+    <div class="shift-toggle">
+      <button type="button" id="btnDia" class="active" onclick="setShift('dia')">☀️ DIA</button>
+      <button type="button" id="btnNoite" onclick="setShift('noite')">🌙 NOITE</button>
     </div>
-    <div class="item-resumo">
-      <span>Horas Extras (+25%):</span>
-      <strong id="resExtras">¥0</strong>
-    </div>
-    <div class="item-resumo">
-      <span>Adicional Domingo (+35%):</span>
-      <strong id="resDomingo">¥0</strong>
-    </div>
-    <div class="item-resumo">
-      <span>Valor da Diária Média:</span>
-      <strong id="resDiaria">¥0</strong>
-    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calcular()">Calcular Salário Bruto</button>
+
+  <div class="result-box" id="resultado" style="display:none;">
+    <div class="total-price" id="totalBruto">¥0</div>
+    <div class="detail-item"><span>Dias Úteis (Semana):</span> <strong id="detUteis">0</strong></div>
+    <div class="detail-item"><span>Domingos (35%):</span> <strong id="detDomingos">0</strong></div>
+    <div class="detail-item"><span>Horas Extras (+25%):</span> <strong id="detExtras">¥0</strong></div>
+    <div class="detail-item" id="rowNoturno" style="display:none;"><span>Adicional Noturno (+25%):</span> <strong id="detNoturno">¥0</strong></div>
   </div>
 </div>
 
 <script>
+  let turnoAtual = 'dia';
+
+  function setShift(turno) {
+    turnoAtual = turno;
+    document.getElementById('btnDia').classList.toggle('active', turno === 'dia');
+    document.getElementById('btnNoite').classList.toggle('active', turno === 'noite');
+  }
+
   function calcular() {
-    const jikyuu = parseFloat(document.getElementById('jikyuu').value) || 0;
-    const dias = parseFloat(document.getElementById('diasTrabalhados').value) || 0;
-    const hNormaisDia = parseFloat(document.getElementById('horasNormais').value) || 0;
-    const hExtrasDia = parseFloat(document.getElementById('horasExtras').value) || 0;
-    const hDomingoTotal = parseFloat(document.getElementById('horasDomingo').value) || 0;
+    const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
+    const diasTotais = parseInt(document.getElementById('diasTotais').value) || 0;
+    const diasDomingo = parseInt(document.getElementById('diasDomingo').value) || 0;
 
-    // Totais de horas
-    const totalHNormais = dias * hNormaisDia;
-    const totalHExtras = dias * hExtrasDia;
+    const diasUteis = Math.max(0, diasTotais - diasDomingo);
 
-    // Valores por tipo
-    const valNormais = totalHNormais * jikyuu;
-    const valExtras = totalHExtras * (jikyuu * 1.25);
-    const valDomingo = hDomingoTotal * (jikyuu * 1.35);
+    // Na jornada de 11h: 9h normais + 2h extras por dia útil
+    const valorHoraNormal = valorHora;
+    const valorHoraExtra = valorHora * 1.25;
+    const valorHoraDomingo = valorHora * 1.35;
+    const valorAdicionalNoturno = valorHora * 0.25; // 25% extra por hora noturna
 
-    const valorTotal = valNormais + valExtras + valDomingo;
-    const valorDiaria = (hNormaisDia * jikyuu) + (hExtrasDia * jikyuu * 1.25);
+    // Cálculos por Dia Útil
+    const totalNormais = diasUteis * 9 * valorHoraNormal;
+    const totalExtras = diasUteis * 2 * valorHoraExtra;
 
-    // Exibir resultados
-    document.getElementById('totalBruto').innerText = `Total Bruto: ¥${Math.round(valorTotal).toLocaleString('ja-JP')}`;
-    document.getElementById('resNormais').innerText = `¥${Math.round(valNormais).toLocaleString('ja-JP')}`;
-    document.getElementById('resExtras').innerText = `¥${Math.round(valExtras).toLocaleString('ja-JP')}`;
-    document.getElementById('resDomingo').innerText = `¥${Math.round(valDomingo).toLocaleString('ja-JP')}`;
-    document.getElementById('resDiaria').innerText = `¥${Math.round(valorDiaria).toLocaleString('ja-JP')}`;
+    // Cálculo por Domingo (11h a +35%)
+    const totalDomingos = diasDomingo * 11 * valorHoraDomingo;
 
-    document.getElementById('painelResultado').style.display = 'block';
+    // Cálculo Noturno Automático (5h noturnas por dia se for turno NOITE)
+    let totalNoturno = 0;
+    if (turnoAtual === 'noite') {
+      const horasNoturnasPorDia = 5;
+      totalNoturno = diasTotais * horasNoturnasPorDia * valorAdicionalNoturno;
+      document.getElementById('rowNoturno').style.display = 'flex';
+      document.getElementById('detNoturno').innerText = '¥' + Math.round(totalNoturno).toLocaleString('ja-JP');
+    } else {
+      document.getElementById('rowNoturno').style.display = 'none';
+    }
+
+    const totalBruto = totalNormais + totalExtras + totalDomingos + totalNoturno;
+
+    document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
+    document.getElementById('detUteis').innerText = diasUteis + ' dias';
+    document.getElementById('detDomingos').innerText = diasDomingo + ' dias';
+    document.getElementById('detExtras').innerText = '¥' + Math.round(totalExtras).toLocaleString('ja-JP');
+
+    document.getElementById('resultado').style.display = 'block';
   }
 </script>
 
