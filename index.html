@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora 4x2 - Turno Fixo Diurno</title>
+  <title>Calculadora 4x2 - Turno Fixo (Dia/Noite)</title>
   <style>
     :root {
       --primary: #0284c7;
@@ -12,6 +12,8 @@
       --text: #0f172a;
       --day-shift: #e0f2fe;
       --day-text: #0369a1;
+      --night-shift: #f3e8ff;
+      --night-text: #6b21a8;
       --off-shift: #f1f5f9;
       --off-text: #94a3b8;
       --forced-off: #fee2e2;
@@ -140,6 +142,12 @@
       border-color: #bae6fd;
     }
 
+    .day-cell.shift-noite {
+      background-color: var(--night-shift);
+      color: var(--night-text);
+      border-color: #e9d5ff;
+    }
+
     .day-cell.shift-folga {
       background-color: var(--off-shift);
       color: var(--off-text);
@@ -162,12 +170,6 @@
       font-weight: bold;
       margin-top: 2px;
       text-align: center;
-    }
-
-    .rate-tag {
-      font-size: 7px;
-      color: #475569;
-      margin-top: 1px;
     }
 
     .legend {
@@ -226,8 +228,23 @@
 
 <div class="container">
   <div class="card">
-    <h2>☀️ Escala 4x2 - Turno Fixo Diurno</h2>
+    <h2>⚙️ Escala 4x2 - Turno Fixo</h2>
     
+    <div class="row-inputs">
+      <div class="form-group">
+        <label>Tipo de Turno:</label>
+        <select id="tipoTurno" onchange="updateAll()">
+          <option value="DIA" selected>☀️ Turno DIA (09:00 - 21:05)</option>
+          <option value="NOITE">🌙 Turno NOITE (21:00 - 09:05)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Valor da Hora (¥):</label>
+        <input type="number" id="valorHora" value="1550" onchange="updateAll()">
+      </div>
+    </div>
+
     <div class="form-group">
       <label>Status da Escala no DIA 21 do Período:</label>
       <select id="startCyclePos" onchange="updateAll()">
@@ -238,24 +255,6 @@
         <option value="4">1º dia de FOLGA</option>
         <option value="5">2º dia de FOLGA</option>
       </select>
-    </div>
-
-    <hr style="border:0; border-top:1px solid #e2e8f0; margin: 14px 0;">
-
-    <div class="row-inputs">
-      <div class="form-group">
-        <label>Valor Hora Inicial (¥):</label>
-        <input type="number" id="valorHoraInicial" value="1400" onchange="updateAll()">
-      </div>
-      <div class="form-group">
-        <label>Valor Hora Novo (¥):</label>
-        <input type="number" id="valorHoraNovo" value="1550" onchange="updateAll()">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Data de Início da Nova Taxa (Dia/Mês):</label>
-      <input type="date" id="dataTrocaSalario" value="2026-08-01" onchange="updateAll()">
     </div>
   </div>
 
@@ -271,10 +270,10 @@
     </div>
 
     <div class="grid-calendar" id="calendarGrid"></div>
-    <div class="instruction-tip">💡 <em>Clique em qualquer dia para marcar/desmarcar Folga Forçada.</em></div>
+    <div class="instruction-tip">💡 <em>Clique em qualquer dia para alternar Folga Forçada.</em></div>
 
     <div class="legend">
-      <div class="legend-item"><div class="legend-box" style="background: var(--day-shift)"></div> TRABALHO</div>
+      <div class="legend-item"><div class="legend-box" id="legendShiftBox" style="background: var(--day-shift)"></div> TRABALHO</div>
       <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA</div>
       <div class="legend-item"><div class="legend-box" style="background: var(--forced-off)"></div> FORÇADA</div>
       <div class="legend-item"><div class="legend-box" style="border: 2px solid #f59e0b; background:#fef3c7;"></div> DOM (+35%)</div>
@@ -293,6 +292,7 @@
       <div class="detail-item"><span>Salário Base (所定内 - 9h/dia):</span> <strong id="valBase">¥0</strong></div>
       <div class="detail-item"><span>Horas Extras (残業 125% - 2h/dia):</span> <strong id="valExtras">¥0</strong></div>
       <div class="detail-item"><span>Trabalho em Folga (法定休出 135% - 11h/dia):</span> <strong id="valDomingos">¥0</strong></div>
+      <div class="detail-item" id="rowNoturno"><span>Adicional Noturno (深夜 25% - 5,1h/dia):</span> <strong id="valNoturno">¥0</strong></div>
     </div>
   </div>
 </div>
@@ -302,7 +302,7 @@
   const forcedOffDays = new Set();
 
   const BASE_YEAR = 2026;
-  const BASE_MONTH = 6; // Julho (Início do período base no dia 21)
+  const BASE_MONTH = 6; // Julho (O período começa dia 21)
 
   function getPeriodDates(offset) {
     const start = new Date(BASE_YEAR, BASE_MONTH + offset, 21);
@@ -320,7 +320,7 @@
     let cyclePos = (startCyclePos + diffDays) % 6;
     if (cyclePos < 0) cyclePos = (cyclePos % 6) + 6;
 
-    if (cyclePos >= 0 && cyclePos <= 3) return 'DIA';
+    if (cyclePos >= 0 && cyclePos <= 3) return 'WORK';
     return 'FOLGA';
   }
 
@@ -348,13 +348,23 @@
   }
 
   function updateAll() {
+    const tipoTurno = document.getElementById('tipoTurno').value; // DIA ou NOITE
+    const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
     const startCyclePos = parseInt(document.getElementById('startCyclePos').value);
+    
     const { start: periodStart, end: periodEnd } = getPeriodDates(currentPeriodOffset);
 
-    const valInicial = parseFloat(document.getElementById('valorHoraInicial').value) || 0;
-    const valNovo = parseFloat(document.getElementById('valorHoraNovo').value) || 0;
-    const dateTrocaStr = document.getElementById('dataTrocaSalario').value;
-    const dateTroca = dateTrocaStr ? new Date(dateTrocaStr + 'T00:00:00') : new Date('2099-01-01');
+    // Ajusta a legenda e visibilidade do noturno
+    const legendBox = document.getElementById('legendShiftBox');
+    const rowNoturno = document.getElementById('rowNoturno');
+
+    if (tipoTurno === 'DIA') {
+      legendBox.style.backgroundColor = 'var(--day-shift)';
+      rowNoturno.style.display = 'none';
+    } else {
+      legendBox.style.backgroundColor = 'var(--night-shift)';
+      rowNoturno.style.display = 'flex';
+    }
 
     const formatD = (d) => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
     document.getElementById('periodTitle').innerText = `${formatD(periodStart)} ～ ${formatD(periodEnd)}`;
@@ -369,17 +379,9 @@
       calendarGrid.appendChild(emptyCell);
     }
 
-    let countDia = 0;
+    let countTrabalho = 0;
     let countForced = 0;
     let countDomingoTrabalhado = 0;
-
-    let totalBaseAcumulado = 0;
-    let totalExtrasAcumulado = 0;
-    let totalDomingosAcumulado = 0;
-
-    let horasNormaisTotais = 0;
-    let horasExtrasTotais = 0;
-    let horasDomingoTotais = 0;
 
     let curr = new Date(periodStart);
     while (curr <= periodEnd) {
@@ -389,34 +391,19 @@
       
       const effectiveShift = isForcedOff ? 'FORCED_OFF' : originalShift;
       const isSunday = (curr.getDay() === 0);
-      const isWorked = (effectiveShift === 'DIA');
+      const isWorked = (effectiveShift === 'WORK');
 
-      // Determina a taxa horária aplicável para o dia específico
-      const taxaDia = (curr < dateTroca) ? valInicial : valNovo;
-
-      if (effectiveShift === 'DIA') countDia++;
+      if (effectiveShift === 'WORK') countTrabalho++;
       if (isForcedOff) countForced++;
-
-      if (isWorked) {
-        if (isSunday) {
-          countDomingoTrabalhado++;
-          horasDomingoTotais += 11;
-          totalDomingosAcumulado += 11 * (taxaDia * 1.35);
-        } else {
-          horasNormaisTotais += 9;
-          horasExtrasTotais += 2;
-          totalBaseAcumulado += 9 * taxaDia;
-          totalExtrasAcumulado += 2 * (taxaDia * 1.25);
-        }
-      }
+      if (isSunday && isWorked) countDomingoTrabalhado++;
 
       const cell = document.createElement('div');
       let shiftClass = 'shift-folga';
       let labelText = 'OFF';
 
-      if (effectiveShift === 'DIA') {
-        shiftClass = 'shift-dia';
-        labelText = 'DIA';
+      if (effectiveShift === 'WORK') {
+        shiftClass = (tipoTurno === 'DIA') ? 'shift-dia' : 'shift-noite';
+        labelText = (tipoTurno === 'DIA') ? 'DIA' : 'NOITE';
       } else if (effectiveShift === 'FORCED_OFF') {
         shiftClass = 'shift-forced-off';
         labelText = 'FORÇADA';
@@ -428,28 +415,38 @@
       }
 
       cell.onclick = () => toggleForcedOff(dateKey, originalShift);
-      cell.innerHTML = `
-        <div>${curr.getDate()}</div>
-        <div class="shift-tag">${labelText}</div>
-        <div class="rate-tag">¥${taxaDia}</div>
-      `;
+      cell.innerHTML = `<div>${curr.getDate()}</div><div class="shift-tag">${labelText}</div>`;
       calendarGrid.appendChild(cell);
 
       curr.setDate(curr.getDate() + 1);
     }
 
-    const totalDiasTrabalhados = countDia;
+    const totalDiasTrabalhados = countTrabalho;
     const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
-    const totalBruto = totalBaseAcumulado + totalExtrasAcumulado + totalDomingosAcumulado;
+
+    const horasNormais = diasUteisTrabalhados * 9;
+    const horasExtras = diasUteisTrabalhados * 2;
+    const horasDomingo = countDomingoTrabalhado * 11;
+    
+    // Adicional noturno: 5,1045 horas por turno da noite (0h se for de dia)
+    const horasNoturnas = (tipoTurno === 'NOITE') ? (totalDiasTrabalhados * 5.1045) : 0;
+
+    const valBase = horasNormais * valorHora;
+    const valExtras = horasExtras * (valorHora * 1.25);
+    const valDomingos = horasDomingo * (valorHora * 1.35);
+    const valNoturno = horasNoturnas * (valorHora * 0.25);
+
+    const totalBruto = valBase + valExtras + valDomingos + valNoturno;
 
     document.getElementById('cntDiasUteis').innerText = diasUteisTrabalhados + ' dias';
     document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
     document.getElementById('cntTotalTrabalhado').innerText = totalDiasTrabalhados + ' dias';
     document.getElementById('cntForced').innerText = countForced + ' dias';
 
-    document.getElementById('valBase').innerText = '¥' + Math.round(totalBaseAcumulado).toLocaleString('ja-JP') + ` (${horasNormaisTotais}h)`;
-    document.getElementById('valExtras').innerText = '¥' + Math.round(totalExtrasAcumulado).toLocaleString('ja-JP') + ` (${horasExtrasTotais}h)`;
-    document.getElementById('valDomingos').innerText = '¥' + Math.round(totalDomingosAcumulado).toLocaleString('ja-JP') + ` (${horasDomingoTotais}h)`;
+    document.getElementById('valBase').innerText = '¥' + Math.round(valBase).toLocaleString('ja-JP') + ` (${horasNormais}h)`;
+    document.getElementById('valExtras').innerText = '¥' + Math.round(valExtras).toLocaleString('ja-JP') + ` (${horasExtras}h)`;
+    document.getElementById('valDomingos').innerText = '¥' + Math.round(valDomingos).toLocaleString('ja-JP') + ` (${horasDomingo}h)`;
+    document.getElementById('valNoturno').innerText = '¥' + Math.round(valNoturno).toLocaleString('ja-JP') + ` (${horasNoturnas.toFixed(2)}h)`;
     document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
   }
 
