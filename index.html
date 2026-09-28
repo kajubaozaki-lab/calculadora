@@ -272,16 +272,15 @@
     <h3>💰 Resumo Calculado Automático</h3>
     <div class="summary-card">
       <div class="total-price" id="totalBruto">¥0</div>
-      <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
-      <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
+      <div class="detail-item"><span>Dias Úteis Trabalhados (平日出勤):</span> <strong id="cntDiasUteis">0 dias</strong></div>
+      <div class="detail-item"><span>Domingos Trabalhados (休出日数):</span> <strong id="cntDom">0 dias</strong></div>
       <div class="detail-item"><span>Total de Dias Trabalhados:</span> <strong id="cntTotalTrabalhado">0 dias</strong></div>
       <div class="detail-item"><span>Folgas Forçadas:</span> <strong id="cntForced" style="color:#dc2626;">0 dias</strong></div>
-      <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
       <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 8px 0;">
-      <div class="detail-item"><span>Salário Base (9h/dia):</span> <strong id="valBase">¥0</strong></div>
-      <div class="detail-item"><span>Horas Extras - 残業 (2h/dia +25%):</span> <strong id="valExtras">¥0</strong></div>
+      <div class="detail-item"><span>Salário Base (所定内):</span> <strong id="valBase">¥0</strong></div>
+      <div class="detail-item"><span>Horas Extras - 残業 (+25%):</span> <strong id="valExtras">¥0</strong></div>
+      <div class="detail-item"><span>Trabalho em Folga - 法定休出 (+35%):</span> <strong id="valDomingos">¥0</strong></div>
       <div class="detail-item"><span>Adicional Noturno - 深夜 (+25%):</span> <strong id="valNoturno">¥0</strong></div>
-      <div class="detail-item"><span>Adicional de Domingo - 休日 (+35%):</span> <strong id="valDomingos">¥0</strong></div>
     </div>
   </div>
 </div>
@@ -404,34 +403,37 @@
 
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
 
-    // LÓGICA DE CÁLCULO CORRIGIDA:
-    // Todos os 18 dias geram 9h normais e 2h extras (1.25)
+    // Divisão Oficial da Fábrica
     const totalDiasTrabalhados = countDia + countNoite;
     
-    const horasNormais = totalDiasTrabalhados * 9;
-    const horasExtras = totalDiasTrabalhados * 2;
-    const horasNoturnas = countNoite * 5.1; // 5.1h por noite
-    const horasDomingo = countDomingoTrabalhado * 11; // 11h por domingo
+    // Domingos são considerados 100% "Trabalho em Folga" (法定休出)
+    // Dias úteis normais = Total - Domingos
+    const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
 
-    // Valores Financeiros
+    // Horas Exatas do Holerite
+    const horasNormais = diasUteisTrabalhados * 9;
+    const horasExtras = diasUteisTrabalhados * 2;
+    const horasDomingo = countDomingoTrabalhado * 11;
+    const horasNoturnas = countNoite * 5.1045; // Fator de precisão noturna
+
+    // Cálculo Financeiro idêntico ao do Holerite
     const valBase = horasNormais * valorHora;
     const valExtras = horasExtras * (valorHora * 1.25);
+    const valDomingos = horasDomingo * (valorHora * 1.35);
     const valNoturno = horasNoturnas * (valorHora * 0.25);
-    const valDomingos = horasDomingo * (valorHora * 0.35); // Bônus de 35% do domingo
 
-    const totalBruto = valBase + valExtras + valNoturno + valDomingos;
+    const totalBruto = valBase + valExtras + valDomingos + valNoturno;
 
-    // Exibição na Tela
-    document.getElementById('cntDia').innerText = countDia + ' dias';
-    document.getElementById('cntNoite').innerText = countNoite + ' dias';
+    // Exibição na Interface
+    document.getElementById('cntDiasUteis').innerText = diasUteisTrabalhados + ' dias';
+    document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
     document.getElementById('cntTotalTrabalhado').innerText = totalDiasTrabalhados + ' dias';
     document.getElementById('cntForced').innerText = countForced + ' dias';
-    document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
 
     document.getElementById('valBase').innerText = '¥' + Math.round(valBase).toLocaleString('ja-JP') + ` (${horasNormais}h)`;
     document.getElementById('valExtras').innerText = '¥' + Math.round(valExtras).toLocaleString('ja-JP') + ` (${horasExtras}h)`;
-    document.getElementById('valNoturno').innerText = '¥' + Math.round(valNoturno).toLocaleString('ja-JP') + ` (${horasNoturnas.toFixed(1)}h)`;
     document.getElementById('valDomingos').innerText = '¥' + Math.round(valDomingos).toLocaleString('ja-JP') + ` (${horasDomingo}h)`;
+    document.getElementById('valNoturno').innerText = '¥' + Math.round(valNoturno).toLocaleString('ja-JP') + ` (${horasNoturnas.toFixed(2)}h)`;
     document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
   }
 
