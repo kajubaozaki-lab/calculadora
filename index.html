@@ -16,6 +16,8 @@
       --night-text: #6b21a8;
       --off-shift: #f1f5f9;
       --off-text: #94a3b8;
+      --forced-off: #fee2e2;
+      --forced-off-text: #dc2626;
     }
 
     body {
@@ -109,11 +111,19 @@
       font-weight: 600;
       border: 1px solid #e2e8f0;
       position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+
+    .day-cell:active {
+      transform: scale(0.95);
     }
 
     .day-cell.empty {
       border: none;
       background: transparent;
+      cursor: default;
     }
 
     .day-cell.shift-dia {
@@ -131,6 +141,13 @@
     .day-cell.shift-folga {
       background-color: var(--off-shift);
       color: var(--off-text);
+      cursor: default;
+    }
+
+    .day-cell.shift-forced-off {
+      background-color: var(--forced-off);
+      color: var(--forced-off-text);
+      border-color: #fca5a5;
     }
 
     .day-cell.is-sunday-worked {
@@ -142,6 +159,7 @@
       font-size: 8px;
       font-weight: bold;
       margin-top: 2px;
+      text-align: center;
     }
 
     .legend {
@@ -187,6 +205,13 @@
       padding: 5px 0;
       border-bottom: 1px dashed #e2e8f0;
     }
+
+    .instruction-tip {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -205,6 +230,11 @@
       <label>Valor por Hora (¥):</label>
       <input type="number" id="valorHora" value="1550" onchange="updateAll()">
     </div>
+
+    <div class="form-group">
+      <label>Folgas Forçadas / Aleatórias (Dias):</label>
+      <input type="number" id="inputFolgasForcadas" value="0" min="0" oninput="onInputFolgasChange()">
+    </div>
   </div>
 
   <div class="card">
@@ -219,12 +249,14 @@
     </div>
 
     <div class="grid-calendar" id="calendarGrid"></div>
+    <div class="instruction-tip">💡 <em>Clique em qualquer dia de trabalho (DIA/NOITE) para marcar como Folga Forçada.</em></div>
 
     <div class="legend">
       <div class="legend-item"><div class="legend-box" style="background: var(--day-shift)"></div> DIA</div>
       <div class="legend-item"><div class="legend-box" style="background: var(--night-shift)"></div> NOITE</div>
-      <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA</div>
-      <div class="legend-item"><div class="legend-box" style="border: 2px solid #f59e0b; background:#fef3c7;"></div> DOMINGO (+35%)</div>
+      <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA NORMAL</div>
+      <div class="legend-item"><div class="legend-box" style="background: var(--forced-off)"></div> FORÇADA</div>
+      <div class="legend-item"><div class="legend-box" style="border: 2px solid #f59e0b; background:#fef3c7;"></div> DOM (+35%)</div>
     </div>
   </div>
 
@@ -234,6 +266,8 @@
       <div class="total-price" id="totalBruto">¥0</div>
       <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
+      <div class="detail-item"><span>Folgas Normais da Escala:</span> <strong id="cntFolgaNormal">0 dias</strong></div>
+      <div class="detail-item"><span>Folgas Forçadas / Aleatórias:</span> <strong id="cntForced" style="color:#dc2626;">0 dias</strong></div>
       <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
       <div class="detail-item"><span>Total de Dias Trabalhados:</span> <strong id="cntTotal">0 dias</strong></div>
       <div class="detail-item"><span>Horas Extras em Dias Úteis (+25%):</span> <strong id="valExtras">¥0</strong></div>
@@ -247,6 +281,8 @@
   let currentPeriodOffset = 0;
   const baseYear = 2026;
   const baseMonth = 4; // Maio
+  
+  const forcedOffDays = new Set();
 
   function getPeriodDates(offset) {
     const start = new Date(baseYear, baseMonth + offset, 21);
@@ -272,6 +308,33 @@
     updateAll();
   }
 
+  function formatDateKey(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function toggleForcedOff(dateKey, originalShift) {
+    if (originalShift === 'FOLGA') return; // As folgas normais permanecem inalteradas
+
+    if (forcedOffDays.has(dateKey)) {
+      forcedOffDays.delete(dateKey);
+    } else {
+      forcedOffDays.add(dateKey);
+    }
+    document.getElementById('inputFolgasForcadas').value = forcedOffDays.size;
+    updateAll();
+  }
+
+  function onInputFolgasChange() {
+    const numInput = parseInt(document.getElementById('inputFolgasForcadas').value) || 0;
+    if (numInput < forcedOffDays.size) {
+      forcedOffDays.clear();
+    }
+    updateAll();
+  }
+
   function updateAll() {
     const startInput = document.getElementById('startDate').value;
     if (!startInput) return;
@@ -285,7 +348,6 @@
     const calendarGrid = document.getElementById('calendarGrid');
     calendarGrid.innerHTML = '';
 
-    // Ajuste exato da coluna do dia da semana para a data inicial do período
     const startDayOfWeek = periodStart.getDay();
     for (let i = 0; i < startDayOfWeek; i++) {
       const emptyCell = document.createElement('div');
@@ -295,28 +357,40 @@
 
     let countDia = 0;
     let countNoite = 0;
+    let countFolgaNormal = 0;
     let countDomingoTrabalhado = 0;
+
+    const inputFolgasVal = parseInt(document.getElementById('inputFolgasForcadas').value) || 0;
 
     let curr = new Date(periodStart);
     while (curr <= periodEnd) {
-      const shift = getShiftForDate(curr, refStartDate);
-      const isSunday = (curr.getDay() === 0);
-      const isWorked = (shift === 'DIA' || shift === 'NOITE');
+      const dateKey = formatDateKey(curr);
+      const originalShift = getShiftForDate(curr, refStartDate);
+      const isForcedOff = forcedOffDays.has(dateKey);
+      
+      const effectiveShift = isForcedOff ? 'FORCED_OFF' : originalShift;
 
-      if (shift === 'DIA') countDia++;
-      if (shift === 'NOITE') countNoite++;
+      const isSunday = (curr.getDay() === 0);
+      const isWorked = (effectiveShift === 'DIA' || effectiveShift === 'NOITE');
+
+      if (effectiveShift === 'DIA') countDia++;
+      if (effectiveShift === 'NOITE') countNoite++;
+      if (originalShift === 'FOLGA') countFolgaNormal++;
       if (isSunday && isWorked) countDomingoTrabalhado++;
 
       const cell = document.createElement('div');
       let shiftClass = 'shift-folga';
       let labelText = 'OFF';
 
-      if (shift === 'DIA') {
+      if (effectiveShift === 'DIA') {
         shiftClass = 'shift-dia';
         labelText = 'DIA';
-      } else if (shift === 'NOITE') {
+      } else if (effectiveShift === 'NOITE') {
         shiftClass = 'shift-noite';
         labelText = 'NOITE';
+      } else if (effectiveShift === 'FORCED_OFF') {
+        shiftClass = 'shift-forced-off';
+        labelText = 'FORÇADA';
       }
 
       cell.className = `day-cell ${shiftClass}`;
@@ -324,10 +398,26 @@
         cell.classList.add('is-sunday-worked');
       }
 
+      cell.onclick = () => toggleForcedOff(dateKey, originalShift);
+
       cell.innerHTML = `<div>${curr.getDate()}</div><div class="shift-tag">${labelText}</div>`;
       calendarGrid.appendChild(cell);
 
       curr.setDate(curr.getDate() + 1);
+    }
+
+    let totalFolgasEfetivas = Math.max(forcedOffDays.size, inputFolgasVal);
+    let folgasParaDescontarSemClique = totalFolgasEfetivas - forcedOffDays.size;
+
+    while (folgasParaDescontarSemClique > 0) {
+      if (countDia > 0) {
+        countDia--;
+      } else if (countNoite > 0) {
+        countNoite--;
+      } else {
+        break;
+      }
+      folgasParaDescontarSemClique--;
     }
 
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
@@ -343,6 +433,8 @@
 
     document.getElementById('cntDia').innerText = countDia + ' dias';
     document.getElementById('cntNoite').innerText = countNoite + ' dias';
+    document.getElementById('cntFolgaNormal').innerText = countFolgaNormal + ' dias';
+    document.getElementById('cntForced').innerText = totalFolgasEfetivas + ' dias';
     document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
     document.getElementById('cntTotal').innerText = totalDiasTrabalhados + ' dias';
 
