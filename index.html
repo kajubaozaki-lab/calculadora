@@ -223,7 +223,7 @@
 
     <div class="form-group">
       <label>Data de Início do 1º Turno DIA:</label>
-      <input type="date" id="startDate" value="2026-05-21" onchange="updateAll()">
+      <input type="date" id="startDate" value="2026-07-19" onchange="updateAll()">
     </div>
 
     <div class="form-group">
@@ -275,25 +275,38 @@
 
 <script>
   let currentPeriodOffset = 0;
-  const baseYear = 2026;
-  const baseMonth = 4; // Maio
   
-  // Armazena as folgas forçadas selecionadas pelo usuário no formato "YYYY-MM-DD"
+  // Guardar as folgas forçadas ("YYYY-MM-DD")
   const forcedOffDays = new Set();
 
   function getPeriodDates(offset) {
+    const startInput = document.getElementById('startDate').value;
+    let baseYear = 2026;
+    let baseMonth = 6; // Julho (mês 0-indexed no JS)
+
+    if (startInput) {
+      const d = new Date(startInput + 'T00:00:00');
+      baseYear = d.getFullYear();
+      baseMonth = d.getMonth();
+    }
+
+    // Período do dia 21 de um mês até dia 20 do mês seguinte
     const start = new Date(baseYear, baseMonth + offset, 21);
     const end = new Date(baseYear, baseMonth + offset + 1, 20);
     return { start, end };
   }
 
   function getShiftForDate(dateObj, refStartDate) {
-    const diffTime = dateObj.getTime() - refStartDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // Zera os horários para garantir cálculo exato em dias inteiros UTC/Local
+    const d1 = Date.UTC(refStartDate.getFullYear(), refStartDate.getMonth(), refStartDate.getDate());
+    const d2 = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    
+    const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
     
     let cyclePos = diffDays % 12;
     if (cyclePos < 0) cyclePos += 12;
 
+    // Ciclo 4 DIA -> 2 FOLGA -> 4 NOITE -> 2 FOLGA
     if (cyclePos >= 0 && cyclePos <= 3) return 'DIA';
     if (cyclePos >= 4 && cyclePos <= 5) return 'FOLGA';
     if (cyclePos >= 6 && cyclePos <= 9) return 'NOITE';
@@ -313,7 +326,7 @@
   }
 
   function toggleForcedOff(dateKey, originalShift) {
-    if (originalShift === 'FOLGA') return; // Dias de folga original não alteram
+    if (originalShift === 'FOLGA') return;
 
     if (forcedOffDays.has(dateKey)) {
       forcedOffDays.delete(dateKey);
@@ -412,7 +425,7 @@
 
     const totalBruto = totalNormais + totalExtras + totalDomingos + totalNoturno;
 
-    // Atualização da Tela
+    // Atualização dos textos no HTML
     document.getElementById('cntDia').innerText = countDia + ' dias';
     document.getElementById('cntNoite').innerText = countNoite + ' dias';
     document.getElementById('cntFolgaNormal').innerText = countFolgaNormal + ' dias';
