@@ -116,17 +116,17 @@
   </div>
 
   <div class="form-group">
-    <label>Dias Totais Trabalhados no Período:</label>
-    <input type="number" id="diasTotais" placeholder="Ex: 18">
+    <label>Dias Totais Trabalhados no Mês (21 a 20):</label>
+    <input type="number" id="diasTotais" placeholder="Ex: 20">
   </div>
 
   <div class="form-group">
-    <label>Desses dias, quantos foram DOMINGOS?</label>
-    <input type="number" id="diasDomingo" value="0" placeholder="Ex: 1">
+    <label>Quantos DOMINGOS você trabalhou no mês?</label>
+    <input type="number" id="diasDomingo" value="0" placeholder="Ex: 0, 1, 2, 3 ou 4">
   </div>
 
   <div class="form-group">
-    <label>Qual foi seu Turno?</label>
+    <label>Qual foi o seu Turno?</label>
     <div class="shift-toggle">
       <button type="button" id="btnDia" class="active" onclick="setShift('dia')">☀️ DIA</button>
       <button type="button" id="btnNoite" onclick="setShift('noite')">🌙 NOITE</button>
@@ -137,10 +137,11 @@
 
   <div class="result-box" id="resultado" style="display:none;">
     <div class="total-price" id="totalBruto">¥0</div>
-    <div class="detail-item"><span>Dias Úteis (Semana):</span> <strong id="detUteis">0</strong></div>
-    <div class="detail-item"><span>Domingos (35%):</span> <strong id="detDomingos">0</strong></div>
-    <div class="detail-item"><span>Horas Extras (+25%):</span> <strong id="detExtras">¥0</strong></div>
-    <div class="detail-item" id="rowNoturno" style="display:none;"><span>Adicional Noturno (+25%):</span> <strong id="detNoturno">¥0</strong></div>
+    <div class="detail-item"><span>Dias Úteis (Seg-Sáb):</span> <strong id="detUteis">0 dias</strong></div>
+    <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="detDomingos">0 dias</strong></div>
+    <div class="detail-item"><span>Valor por Domingos (+35%):</span> <strong id="detValDomingos">¥0</strong></div>
+    <div class="detail-item"><span>Horas Extras em Dias Úteis (+25%):</span> <strong id="detExtras">¥0</strong></div>
+    <div class="detail-item" id="rowNoturno" style="display:none;"><span>Adicional Noturno Automático (+25%):</span> <strong id="detNoturno">¥0</strong></div>
   </div>
 </div>
 
@@ -158,22 +159,23 @@
     const diasTotais = parseInt(document.getElementById('diasTotais').value) || 0;
     const diasDomingo = parseInt(document.getElementById('diasDomingo').value) || 0;
 
+    // Dias de semana/sábado
     const diasUteis = Math.max(0, diasTotais - diasDomingo);
 
-    // Na jornada de 11h: 9h normais + 2h extras por dia útil
+    // Valores por Hora
     const valorHoraNormal = valorHora;
     const valorHoraExtra = valorHora * 1.25;
     const valorHoraDomingo = valorHora * 1.35;
-    const valorAdicionalNoturno = valorHora * 0.25; // 25% extra por hora noturna
+    const valorAdicionalNoturno = valorHora * 0.25;
 
-    // Cálculos por Dia Útil
+    // 1. Dias Úteis (9h normais + 2h extras)
     const totalNormais = diasUteis * 9 * valorHoraNormal;
     const totalExtras = diasUteis * 2 * valorHoraExtra;
 
-    // Cálculo por Domingo (11h a +35%)
+    // 2. Domingos Trabalhados (11h com +35%)
     const totalDomingos = diasDomingo * 11 * valorHoraDomingo;
 
-    // Cálculo Noturno Automático (5h noturnas por dia se for turno NOITE)
+    // 3. Turno Noturno Automático (5h noturnas por dia trabalhado)
     let totalNoturno = 0;
     if (turnoAtual === 'noite') {
       const horasNoturnasPorDia = 5;
@@ -189,6 +191,7 @@
     document.getElementById('totalBruto').innerText = 'Total Bruto: ¥' + Math.round(totalBruto).toLocaleString('ja-JP');
     document.getElementById('detUteis').innerText = diasUteis + ' dias';
     document.getElementById('detDomingos').innerText = diasDomingo + ' dias';
+    document.getElementById('detValDomingos').innerText = '¥' + Math.round(totalDomingos).toLocaleString('ja-JP');
     document.getElementById('detExtras').innerText = '¥' + Math.round(totalExtras).toLocaleString('ja-JP');
 
     document.getElementById('resultado').style.display = 'block';
