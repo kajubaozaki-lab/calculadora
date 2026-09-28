@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora 4x2 - Turno Fixo (Dia/Noite)</title>
+  <title>Calculadora 4x2 - Mês Mensal (01 ao 30/31)</title>
   <style>
     :root {
       --primary: #0284c7;
@@ -228,7 +228,7 @@
 
 <div class="container">
   <div class="card">
-    <h2>⚙️ Escala 4x2 - Turno Fixo</h2>
+    <h2>🗓️ Escala 4x2 - Mês Cheio (01 ao 30/31)</h2>
     
     <div class="row-inputs">
       <div class="form-group">
@@ -246,7 +246,7 @@
     </div>
 
     <div class="form-group">
-      <label>Status da Escala no DIA 21 do Período:</label>
+      <label>Status da Escala no DIA 01 do Mês:</label>
       <select id="startCyclePos" onchange="updateAll()">
         <option value="0" selected>1º dia de TRABALHO</option>
         <option value="1">2º dia de TRABALHO</option>
@@ -261,7 +261,7 @@
   <div class="card">
     <div class="calendar-header">
       <button class="btn-nav" onclick="changePeriod(-1)">◄ Anterior</button>
-      <h3 id="periodTitle" style="margin:0; font-size: 15px;">Período</h3>
+      <h3 id="periodTitle" style="margin:0; font-size: 15px;">Mês</h3>
       <button class="btn-nav" onclick="changePeriod(1)">Próximo ►</button>
     </div>
 
@@ -298,24 +298,27 @@
 </div>
 
 <script>
-  let currentPeriodOffset = 0;
+  let currentMonthOffset = 0;
   const forcedOffDays = new Set();
 
+  // Define ano e mês de referência atual (Setembro/2026)
   const BASE_YEAR = 2026;
-  const BASE_MONTH = 6; // Julho (O período começa dia 21)
+  const BASE_MONTH = 8; // Setembro (Mês indexado em 0)
 
-  function getPeriodDates(offset) {
-    const start = new Date(BASE_YEAR, BASE_MONTH + offset, 21);
-    const end = new Date(BASE_YEAR, BASE_MONTH + offset + 1, 20);
-    return { start, end };
+  function getMonthInfo(offset) {
+    const date = new Date(BASE_YEAR, BASE_MONTH + offset, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0); // Último dia do mês (30 ou 31)
+
+    return { firstDay, lastDay, year, month };
   }
 
   function getShiftForDate(dateObj, startCyclePos) {
-    const base21 = new Date(BASE_YEAR, BASE_MONTH, 21);
-    const d1 = Date.UTC(base21.getFullYear(), base21.getMonth(), base21.getDate());
-    const d2 = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-    
-    const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+    const dayOfMonth = dateObj.getDate();
+    const diffDays = dayOfMonth - 1; // Dias decorridos a partir do dia 01
     
     let cyclePos = (startCyclePos + diffDays) % 6;
     if (cyclePos < 0) cyclePos = (cyclePos % 6) + 6;
@@ -325,7 +328,7 @@
   }
 
   function changePeriod(delta) {
-    currentPeriodOffset += delta;
+    currentMonthOffset += delta;
     updateAll();
   }
 
@@ -348,13 +351,13 @@
   }
 
   function updateAll() {
-    const tipoTurno = document.getElementById('tipoTurno').value; // DIA ou NOITE
+    const tipoTurno = document.getElementById('tipoTurno').value;
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
     const startCyclePos = parseInt(document.getElementById('startCyclePos').value);
     
-    const { start: periodStart, end: periodEnd } = getPeriodDates(currentPeriodOffset);
+    const { firstDay, lastDay, year, month } = getMonthInfo(currentMonthOffset);
 
-    // Ajusta a legenda e visibilidade do noturno
+    // Ajusta a legenda e o bloco de hora noturna
     const legendBox = document.getElementById('legendShiftBox');
     const rowNoturno = document.getElementById('rowNoturno');
 
@@ -366,13 +369,13 @@
       rowNoturno.style.display = 'flex';
     }
 
-    const formatD = (d) => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-    document.getElementById('periodTitle').innerText = `${formatD(periodStart)} ～ ${formatD(periodEnd)}`;
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    document.getElementById('periodTitle').innerText = `${monthNames[month]} de ${year}`;
 
     const calendarGrid = document.getElementById('calendarGrid');
     calendarGrid.innerHTML = '';
 
-    const startDayOfWeek = periodStart.getDay();
+    const startDayOfWeek = firstDay.getDay();
     for (let i = 0; i < startDayOfWeek; i++) {
       const emptyCell = document.createElement('div');
       emptyCell.className = 'day-cell empty';
@@ -383,8 +386,8 @@
     let countForced = 0;
     let countDomingoTrabalhado = 0;
 
-    let curr = new Date(periodStart);
-    while (curr <= periodEnd) {
+    let curr = new Date(firstDay);
+    while (curr <= lastDay) {
       const dateKey = formatDateKey(curr);
       const originalShift = getShiftForDate(curr, startCyclePos);
       const isForcedOff = forcedOffDays.has(dateKey);
@@ -428,7 +431,7 @@
     const horasExtras = diasUteisTrabalhados * 2;
     const horasDomingo = countDomingoTrabalhado * 11;
     
-    // Adicional noturno: 5,1045 horas por turno da noite (0h se for de dia)
+    // 5,1045h de adicional noturno por turno de noite
     const horasNoturnas = (tipoTurno === 'NOITE') ? (totalDiasTrabalhados * 5.1045) : 0;
 
     const valBase = horasNormais * valorHora;
