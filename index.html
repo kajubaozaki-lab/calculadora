@@ -197,7 +197,7 @@
     <p style="font-size: 12px; color: #64748b; margin-top: -10px;">Fechamento automático do dia 21 ao dia 20</p>
 
     <div class="form-group">
-      <label>Data de Início do 1º Turno DIA (Ex: 21/05):</label>
+      <label>Data de Início do 1º Turno DIA:</label>
       <input type="date" id="startDate" value="2026-05-21" onchange="updateAll()">
     </div>
 
@@ -254,7 +254,6 @@
     return { start, end };
   }
 
-  // Rotação 12 dias: 4 DIA (0..3), 2 FOLGA (4..5), 4 NOITE (6..9), 2 FOLGA (10..11)
   function getShiftForDate(dateObj, refStartDate) {
     const diffTime = dateObj.getTime() - refStartDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -286,6 +285,7 @@
     const calendarGrid = document.getElementById('calendarGrid');
     calendarGrid.innerHTML = '';
 
+    // Ajuste exato da coluna do dia da semana para a data inicial do período
     const startDayOfWeek = periodStart.getDay();
     for (let i = 0; i < startDayOfWeek; i++) {
       const emptyCell = document.createElement('div');
