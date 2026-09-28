@@ -230,11 +230,6 @@
       <label>Valor por Hora (¥):</label>
       <input type="number" id="valorHora" value="1550" onchange="updateAll()">
     </div>
-
-    <div class="form-group">
-      <label>Folgas Forçadas / Aleatórias (Dias):</label>
-      <input type="number" id="inputFolgasForcadas" value="0" min="0" oninput="onInputFolgasChange()">
-    </div>
   </div>
 
   <div class="card">
@@ -249,7 +244,7 @@
     </div>
 
     <div class="grid-calendar" id="calendarGrid"></div>
-    <div class="instruction-tip">💡 <em>Clique em qualquer dia de trabalho (DIA/NOITE) para marcar como Folga Forçada.</em></div>
+    <div class="instruction-tip">💡 <em>Clique em qualquer dia trabalhado (DIA/NOITE) para marcar ou desmarcar Folga Forçada.</em></div>
 
     <div class="legend">
       <div class="legend-item"><div class="legend-box" style="background: var(--day-shift)"></div> DIA</div>
@@ -267,7 +262,8 @@
       <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
       <div class="detail-item"><span>Folgas Normais da Escala:</span> <strong id="cntFolgaNormal">0 dias</strong></div>
-      <div class="detail-item"><span>Folgas Forçadas / Aleatórias:</span> <strong id="cntForced" style="color:#dc2626;">0 dias</strong></div>
+      <div class="detail-item"><span>Folgas Forçadas (DIA):</span> <strong id="cntForcedDia" style="color:#dc2626;">0 dias</strong></div>
+      <div class="detail-item"><span>Folgas Forçadas (NOITE):</span> <strong id="cntForcedNoite" style="color:#dc2626;">0 dias</strong></div>
       <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
       <div class="detail-item"><span>Total de Dias Trabalhados:</span> <strong id="cntTotal">0 dias</strong></div>
       <div class="detail-item"><span>Horas Extras em Dias Úteis (+25%):</span> <strong id="valExtras">¥0</strong></div>
@@ -282,6 +278,7 @@
   const baseYear = 2026;
   const baseMonth = 4; // Maio
   
+  // Armazena as folgas forçadas selecionadas pelo usuário no formato "YYYY-MM-DD"
   const forcedOffDays = new Set();
 
   function getPeriodDates(offset) {
@@ -316,21 +313,12 @@
   }
 
   function toggleForcedOff(dateKey, originalShift) {
-    if (originalShift === 'FOLGA') return; // As folgas normais permanecem inalteradas
+    if (originalShift === 'FOLGA') return; // Dias de folga original não alteram
 
     if (forcedOffDays.has(dateKey)) {
       forcedOffDays.delete(dateKey);
     } else {
       forcedOffDays.add(dateKey);
-    }
-    document.getElementById('inputFolgasForcadas').value = forcedOffDays.size;
-    updateAll();
-  }
-
-  function onInputFolgasChange() {
-    const numInput = parseInt(document.getElementById('inputFolgasForcadas').value) || 0;
-    if (numInput < forcedOffDays.size) {
-      forcedOffDays.clear();
     }
     updateAll();
   }
@@ -358,9 +346,9 @@
     let countDia = 0;
     let countNoite = 0;
     let countFolgaNormal = 0;
+    let countForcedDia = 0;
+    let countForcedNoite = 0;
     let countDomingoTrabalhado = 0;
-
-    const inputFolgasVal = parseInt(document.getElementById('inputFolgasForcadas').value) || 0;
 
     let curr = new Date(periodStart);
     while (curr <= periodEnd) {
@@ -376,6 +364,12 @@
       if (effectiveShift === 'DIA') countDia++;
       if (effectiveShift === 'NOITE') countNoite++;
       if (originalShift === 'FOLGA') countFolgaNormal++;
+      
+      if (isForcedOff) {
+        if (originalShift === 'DIA') countForcedDia++;
+        if (originalShift === 'NOITE') countForcedNoite++;
+      }
+
       if (isSunday && isWorked) countDomingoTrabalhado++;
 
       const cell = document.createElement('div');
@@ -406,24 +400,11 @@
       curr.setDate(curr.getDate() + 1);
     }
 
-    let totalFolgasEfetivas = Math.max(forcedOffDays.size, inputFolgasVal);
-    let folgasParaDescontarSemClique = totalFolgasEfetivas - forcedOffDays.size;
-
-    while (folgasParaDescontarSemClique > 0) {
-      if (countDia > 0) {
-        countDia--;
-      } else if (countNoite > 0) {
-        countNoite--;
-      } else {
-        break;
-      }
-      folgasParaDescontarSemClique--;
-    }
-
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
     const totalDiasTrabalhados = countDia + countNoite;
     const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
 
+    // Cálculos
     const totalNormais = diasUteisTrabalhados * 9 * valorHora;
     const totalExtras = diasUteisTrabalhados * 2 * (valorHora * 1.25);
     const totalDomingos = countDomingoTrabalhado * 11 * (valorHora * 1.35);
@@ -431,10 +412,12 @@
 
     const totalBruto = totalNormais + totalExtras + totalDomingos + totalNoturno;
 
+    // Atualização da Tela
     document.getElementById('cntDia').innerText = countDia + ' dias';
     document.getElementById('cntNoite').innerText = countNoite + ' dias';
     document.getElementById('cntFolgaNormal').innerText = countFolgaNormal + ' dias';
-    document.getElementById('cntForced').innerText = totalFolgasEfetivas + ' dias';
+    document.getElementById('cntForcedDia').innerText = countForcedDia + ' dias';
+    document.getElementById('cntForcedNoite').innerText = countForcedNoite + ' dias';
     document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
     document.getElementById('cntTotal').innerText = totalDiasTrabalhados + ' dias';
 
