@@ -58,13 +58,14 @@
       color: #475569;
     }
 
-    input {
+    input, select {
       width: 100%;
       padding: 10px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       font-size: 15px;
       box-sizing: border-box;
+      background: #fff;
     }
 
     .calendar-header {
@@ -78,8 +79,8 @@
       background: var(--primary);
       color: white;
       border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -218,16 +219,28 @@
 
 <div class="container">
   <div class="card">
-    <h2>📅 Escala 4x2 & Salário</h2>
-    <p style="font-size: 12px; color: #64748b; margin-top: -10px;">Fechamento automático do dia 21 ao dia 20</p>
-
+    <h2>📅 Escala 4x2 Japão</h2>
+    
     <div class="form-group">
-      <label>Data de Início do 1º Turno DIA:</label>
-      <input type="date" id="startDate" value="2026-07-19" onchange="updateAll()">
+      <label>Qual o status do turno no DIA 21 do período?</label>
+      <select id="startCyclePos" onchange="updateAll()">
+        <option value="0">1º dia de DIA</option>
+        <option value="1">2º dia de DIA</option>
+        <option value="2" selected>3º dia de DIA</option>
+        <option value="3">4º dia de DIA</option>
+        <option value="4">1º dia de FOLGA</option>
+        <option value="5">2º dia de FOLGA</option>
+        <option value="6">1º dia de NOITE</option>
+        <option value="7">2º dia de NOITE</option>
+        <option value="8">3º dia de NOITE</option>
+        <option value="9">4º dia de NOITE</option>
+        <option value="10">1º dia de FOLGA (após noite)</option>
+        <option value="11">2º dia de FOLGA (após noite)</option>
+      </select>
     </div>
 
     <div class="form-group">
-      <label>Valor por Hora (¥):</label>
+      <label>Valor da Hora (¥):</label>
       <input type="number" id="valorHora" value="1550" onchange="updateAll()">
     </div>
   </div>
@@ -244,12 +257,12 @@
     </div>
 
     <div class="grid-calendar" id="calendarGrid"></div>
-    <div class="instruction-tip">💡 <em>Clique em qualquer dia trabalhado para marcar/desmarcar Folga Forçada.</em></div>
+    <div class="instruction-tip">💡 <em>Clique em qualquer dia para alternar Folga Forçada.</em></div>
 
     <div class="legend">
       <div class="legend-item"><div class="legend-box" style="background: var(--day-shift)"></div> DIA</div>
       <div class="legend-item"><div class="legend-box" style="background: var(--night-shift)"></div> NOITE</div>
-      <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA NORMAL</div>
+      <div class="legend-item"><div class="legend-box" style="background: var(--off-shift)"></div> FOLGA</div>
       <div class="legend-item"><div class="legend-box" style="background: var(--forced-off)"></div> FORÇADA</div>
       <div class="legend-item"><div class="legend-box" style="border: 2px solid #f59e0b; background:#fef3c7;"></div> DOM (+35%)</div>
     </div>
@@ -261,12 +274,11 @@
       <div class="total-price" id="totalBruto">¥0</div>
       <div class="detail-item"><span>Horas Normais (9h/dia):</span> <strong id="cntHorasNormais">0 hrs</strong></div>
       <div class="detail-item"><span>Horas Extras (2h/dia):</span> <strong id="cntHorasExtras">0 hrs</strong></div>
-      <div class="detail-item"><span>Adicional Noturno (5h/noite):</span> <strong id="cntHorasNoturnas">0 hrs</strong></div>
+      <div class="detail-item"><span>Adicional Noturno (5.1h/noite):</span> <strong id="cntHorasNoturnas">0 hrs</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (DIA):</span> <strong id="cntDia">0 dias</strong></div>
       <div class="detail-item"><span>Dias Trabalhados (NOITE):</span> <strong id="cntNoite">0 dias</strong></div>
-      <div class="detail-item"><span>Folgas Forçadas (DIA):</span> <strong id="cntForcedDia" style="color:#dc2626;">0 dias</strong></div>
-      <div class="detail-item"><span>Folgas Forçadas (NOITE):</span> <strong id="cntForcedNoite" style="color:#dc2626;">0 dias</strong></div>
-      <div class="detail-item"><span>Domingos Trabalhados (+35%):</span> <strong id="cntDom">0 dias</strong></div>
+      <div class="detail-item"><span>Folgas Forçadas:</span> <strong id="cntForced" style="color:#dc2626;">0 dias</strong></div>
+      <div class="detail-item"><span>Domingos Trabalhados:</span> <strong id="cntDom">0 dias</strong></div>
       <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 8px 0;">
       <div class="detail-item"><span>Salário Base (所定内):</span> <strong id="valBase">¥0</strong></div>
       <div class="detail-item"><span>Horas Extras - 残業 (+25%):</span> <strong id="valExtras">¥0</strong></div>
@@ -280,30 +292,26 @@
   let currentPeriodOffset = 0;
   const forcedOffDays = new Set();
 
+  // Mês base fixo de referência (Julho/Agosto 2026)
+  const BASE_YEAR = 2026;
+  const BASE_MONTH = 6; // Julho (0-indexed)
+
   function getPeriodDates(offset) {
-    const startInput = document.getElementById('startDate').value;
-    let baseYear = 2026;
-    let baseMonth = 6; 
-
-    if (startInput) {
-      const d = new Date(startInput + 'T00:00:00');
-      baseYear = d.getFullYear();
-      baseMonth = d.getMonth();
-    }
-
-    const start = new Date(baseYear, baseMonth + offset, 21);
-    const end = new Date(baseYear, baseMonth + offset + 1, 20);
+    const start = new Date(BASE_YEAR, BASE_MONTH + offset, 21);
+    const end = new Date(BASE_YEAR, BASE_MONTH + offset + 1, 20);
     return { start, end };
   }
 
-  function getShiftForDate(dateObj, refStartDate) {
-    const d1 = Date.UTC(refStartDate.getFullYear(), refStartDate.getMonth(), refStartDate.getDate());
+  function getShiftForDate(dateObj, startCyclePos) {
+    // Referência fixa do dia 21 do período inicial
+    const base21 = new Date(BASE_YEAR, BASE_MONTH, 21);
+    const d1 = Date.UTC(base21.getFullYear(), base21.getMonth(), base21.getDate());
     const d2 = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
     
     const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
     
-    let cyclePos = diffDays % 12;
-    if (cyclePos < 0) cyclePos += 12;
+    let cyclePos = (startCyclePos + diffDays) % 12;
+    if (cyclePos < 0) cyclePos = (cyclePos % 12) + 12;
 
     if (cyclePos >= 0 && cyclePos <= 3) return 'DIA';
     if (cyclePos >= 4 && cyclePos <= 5) return 'FOLGA';
@@ -335,10 +343,7 @@
   }
 
   function updateAll() {
-    const startInput = document.getElementById('startDate').value;
-    if (!startInput) return;
-    const refStartDate = new Date(startInput + 'T00:00:00');
-
+    const startCyclePos = parseInt(document.getElementById('startCyclePos').value);
     const { start: periodStart, end: periodEnd } = getPeriodDates(currentPeriodOffset);
 
     const formatD = (d) => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
@@ -356,15 +361,13 @@
 
     let countDia = 0;
     let countNoite = 0;
-    let countFolgaNormal = 0;
-    let countForcedDia = 0;
-    let countForcedNoite = 0;
+    let countForced = 0;
     let countDomingoTrabalhado = 0;
 
     let curr = new Date(periodStart);
     while (curr <= periodEnd) {
       const dateKey = formatDateKey(curr);
-      const originalShift = getShiftForDate(curr, refStartDate);
+      const originalShift = getShiftForDate(curr, startCyclePos);
       const isForcedOff = forcedOffDays.has(dateKey);
       
       const effectiveShift = isForcedOff ? 'FORCED_OFF' : originalShift;
@@ -373,13 +376,7 @@
 
       if (effectiveShift === 'DIA') countDia++;
       if (effectiveShift === 'NOITE') countNoite++;
-      if (originalShift === 'FOLGA') countFolgaNormal++;
-      
-      if (isForcedOff) {
-        if (originalShift === 'DIA') countForcedDia++;
-        if (originalShift === 'NOITE') countForcedNoite++;
-      }
-
+      if (isForcedOff) countForced++;
       if (isSunday && isWorked) countDomingoTrabalhado++;
 
       const cell = document.createElement('div');
@@ -411,13 +408,13 @@
 
     const valorHora = parseFloat(document.getElementById('valorHora').value) || 0;
 
-    // Regra das 11h (9h normais + 2h extras)
-    const totalDiasEfetivos = countDia + countNoite;
-    const diasUteisTrabalhados = totalDiasEfetivos - countDomingoTrabalhado;
+    // Ajuste exato das horas de acordo com o meishou da fábrica
+    const totalDiasTrabalhados = countDia + countNoite;
+    const diasUteisTrabalhados = totalDiasTrabalhados - countDomingoTrabalhado;
 
     const horasNormais = diasUteisTrabalhados * 9;
     const horasExtras = diasUteisTrabalhados * 2;
-    const horasNoturnas = countNoite * 5; 
+    const horasNoturnas = Math.round(countNoite * 5.105 * 100) / 100; // Média exata de adicionais noturnos
     const horasDomingo = countDomingoTrabalhado * 11;
 
     // Valores Financeiros
@@ -428,14 +425,13 @@
 
     const totalBruto = valBase + valExtras + valNoturno + valDomingos;
 
-    // Atualização dos elementos na tela
+    // Atualização da Tela
     document.getElementById('cntHorasNormais').innerText = horasNormais + ' hrs';
     document.getElementById('cntHorasExtras').innerText = horasExtras + ' hrs';
     document.getElementById('cntHorasNoturnas').innerText = horasNoturnas + ' hrs';
     document.getElementById('cntDia').innerText = countDia + ' dias';
     document.getElementById('cntNoite').innerText = countNoite + ' dias';
-    document.getElementById('cntForcedDia').innerText = countForcedDia + ' dias';
-    document.getElementById('cntForcedNoite').innerText = countForcedNoite + ' dias';
+    document.getElementById('cntForced').innerText = countForced + ' dias';
     document.getElementById('cntDom').innerText = countDomingoTrabalhado + ' dias';
 
     document.getElementById('valBase').innerText = '¥' + Math.round(valBase).toLocaleString('ja-JP');
